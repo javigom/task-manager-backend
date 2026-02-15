@@ -1,0 +1,67 @@
+services:
+  # PostgreSQL database service
+  db:
+    image: postgres:18
+    container_name: taskmanager-db-${ENVIRONMENT}
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "${HOST_DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - default
+
+  # FastAPI application service
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: taskmanager-api-${ENVIRONMENT}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ../src:/app/src:rw
+      - ../alembic:/app/alembic:ro
+    # Run uvicorn in reload mode for development
+    command:
+      [
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+        "--reload-dir",
+        "/app/src",
+      ]
+    env_file:
+      - ../.env
+    environment:
+      PYTHONPATH: /app/src
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      SECRET_KEY: ${SECRET_KEY}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      REFRESH_TOKEN_EXPIRE_MINUTES: ${REFRESH_TOKEN_EXPIRE_MINUTES}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      ENVIRONMENT: ${ENVIRONMENT}
+    ports:
+      - "${HOST_WEB_PORT}:8000"
+    networks:
+      - default
+
+volumes:
+  postgres_data:
