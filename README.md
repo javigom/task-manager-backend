@@ -14,7 +14,7 @@ Task Manager API — FastAPI + SQLAlchemy (async) + PostgreSQL + Docker
 ## Installation
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/javigom/task-manager-backend.git
 cd task-manager-backend
 cp .env.template .env
 docker compose up --build -d
