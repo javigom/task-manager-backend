@@ -45,3 +45,9 @@ async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_db)):
     access = auth.create_access_token(user.email)
     refresh = auth.create_refresh_token(user.email)
     return {"access_token": access, "refresh_token": refresh, "token_type": "bearer"}
+
+
+@router.get("/me", response_model=schemas.UserRead)
+async def read_current_user(current_user=Depends(auth.get_current_user)):
+    """Return the currently authenticated user."""
+    return current_user
